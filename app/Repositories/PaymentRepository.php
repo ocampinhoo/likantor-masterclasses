@@ -139,7 +139,7 @@ final class PaymentRepository
      * campos amount/currency/provider_payment_id son opcionales: si vienen en
      * null, se conserva el valor previamente almacenado (COALESCE).
      *
-     * @param array{status:string, provider_payment_id:?string, amount:?float, currency:?string, metadata:array<string,mixed>} $data
+     * @param array{status:string, provider_payment_id:?string, amount:?float, currency:?string, metadata:array<string,mixed>, failure_reason?:?string} $data
      */
     public function updateFromWebhook(int $id, array $data): void
     {
@@ -149,6 +149,7 @@ final class PaymentRepository
                 provider_payment_id = COALESCE(:provider_payment_id, provider_payment_id),
                 amount = COALESCE(:amount, amount),
                 currency = COALESCE(:currency, currency),
+                failure_reason = :failure_reason,
                 metadata = :metadata,
                 webhook_received_at = NOW(),
                 updated_at = NOW()
@@ -160,6 +161,7 @@ final class PaymentRepository
             'provider_payment_id' => $data['provider_payment_id'],
             'amount' => $data['amount'],
             'currency' => $data['currency'],
+            'failure_reason' => $data['failure_reason'] ?? null,
             'metadata' => json_encode($data['metadata'], JSON_UNESCAPED_UNICODE),
             'id' => $id,
         ]);

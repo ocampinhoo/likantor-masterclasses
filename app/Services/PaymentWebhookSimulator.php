@@ -13,42 +13,60 @@ use App\Core\Config;
  *
  * Usado tanto por el simulador web (App\Controllers\Dev\PaymentSimulatorController)
  * como por el script de línea de comandos (cron/simulate_webhook.php).
+ *
+ * Solo debe usarse con APP_ENV=local. No genera ni requiere API keys reales.
  */
 final class PaymentWebhookSimulator
 {
     public const ALLOWED_OUTCOMES = ['approved', 'failed', 'cancelled', 'refunded', 'pending'];
 
     /**
-     * @param array<string, mixed> $payment
-     * @return array{body:string, headers:array<int,string>, path:string}
+     * @param array<string, mixed> $payment Fila de payments (uuid, amount, currency, provider, …)
+     * @param array{amount?:float|int|string, currency?:string, event_id?:string} $overrides
+     *        amount/currency: simulan un webhook del proveedor con valores distintos
+     *        al checkout (para probar rechazo por mismatch).
+     *        event_id: fija el id del evento para poder reenviar el mismo webhook
+     *        y probar idempotencia.
+     * @return array{body:string, headers:array<int,string>, path:string, event_id:string}
      */
-    public static function build(string $provider, string $outcome, array $payment): array
+    public static function build(string $provider, string $outcome, array $payment, array $overrides = []): array
     {
         if (!in_array($outcome, self::ALLOWED_OUTCOMES, true)) {
             $outcome = 'approved';
         }
 
         if ($provider === 'stripe') {
-            [$body, $headers] = self::buildStripeEvent($outcome, $payment);
+            [$body, $headers, $eventId] = self::buildStripeEvent($outcome, $payment, $overrides);
 
-            return ['body' => $body, 'headers' => $headers, 'path' => '/webhooks/stripe'];
+            return [
+                'body' => $body,
+                'headers' => $headers,
+                'path' => '/webhooks/stripe',
+                'event_id' => $eventId,
+            ];
         }
 
-        [$body, $headers, $queryString] = self::buildMercadoPagoEvent($outcome, $payment);
+        [$body, $headers, $queryString, $eventId] = self::buildMercadoPagoEvent($outcome, $payment, $overrides);
 
-        return ['body' => $body, 'headers' => $headers, 'path' => '/webhooks/mercadopago?' . $queryString];
+        return [
+            'body' => $body,
+            'headers' => $headers,
+            'path' => '/webhooks/mercadopago?' . $queryString,
+            'event_id' => $eventId,
+        ];
     }
 
     /**
      * @param array<string, mixed> $payment
-     * @return array{0:string, 1:array<int,string>}
+     * @param array{amount?:float|int|string, currency?:string, event_id?:string} $overrides
+     * @return array{0:string, 1:array<int,string>, 2:string}
      */
-    private static function buildStripeEvent(string $outcome, array $payment): array
+    private static function buildStripeEvent(string $outcome, array $payment, array $overrides): array
     {
         $uuidCompact = substr(str_replace('-', '', (string) $payment['uuid']), 0, 16);
         $fakePaymentIntentId = 'pi_dev_' . $uuidCompact;
-        $amountMinor = (int) round(((float) $payment['amount']) * 100);
-        $currency = strtolower((string) $payment['currency']);
+        [$amountMajor, $currency] = self::resolveSimulatedMoney($payment, $overrides);
+        $amountMinor = (int) round($amountMajor * 100);
 
         $eventType = match ($outcome) {
             'approved' => 'checkout.session.completed',
@@ -80,8 +98,10 @@ final class PaymentWebhookSimulator
             ];
         }
 
+        $eventId = self::resolveEventId($overrides, 'evt_dev_');
+
         $event = [
-            'id' => 'evt_dev_' . bin2hex(random_bytes(8)),
+            'id' => $eventId,
             'type' => $eventType,
             'data' => ['object' => $object],
         ];
@@ -96,14 +116,15 @@ final class PaymentWebhookSimulator
             'Stripe-Signature: t=' . $timestamp . ',v1=' . $signature,
         ];
 
-        return [$body, $headers];
+        return [$body, $headers, $eventId];
     }
 
     /**
      * @param array<string, mixed> $payment
-     * @return array{0:string, 1:array<int,string>, 2:string}
+     * @param array{amount?:float|int|string, currency?:string, event_id?:string} $overrides
+     * @return array{0:string, 1:array<int,string>, 2:string, 3:string}
      */
-    private static function buildMercadoPagoEvent(string $outcome, array $payment): array
+    private static function buildMercadoPagoEvent(string $outcome, array $payment, array $overrides): array
     {
         $mpStatus = match ($outcome) {
             'approved' => 'approved',
@@ -113,23 +134,26 @@ final class PaymentWebhookSimulator
             default => 'pending',
         };
 
-        // El "pago falso" (estado, monto, moneda, referencia) se embebe directamente en el id,
-        // ya que en modo simulación no existe una cuenta real de Mercado Pago a la cual consultar.
-        // MercadoPagoPaymentService::fetchPayment() lo decodifica en vez de llamar a la API real
-        // (solo si APP_ENV=local y no hay access token configurado).
+        [$amountMajor, $currency] = self::resolveSimulatedMoney($payment, $overrides);
+
+        // El "pago falso" se embebe en el id (prefijo DEV_). fetchPayment() lo
+        // decodifica solo si APP_ENV=local y no hay access token real.
         $encoded = base64_encode((string) json_encode([
             'status' => $mpStatus,
             'status_detail' => 'dev_simulated',
-            'transaction_amount' => (float) $payment['amount'],
-            'currency_id' => (string) $payment['currency'],
+            'transaction_amount' => $amountMajor,
+            'currency_id' => strtoupper($currency),
             'external_reference' => (string) $payment['uuid'],
         ]));
         $token = 'DEV_' . rtrim(strtr($encoded, '+/', '-_'), '=');
 
-        $notificationId = random_int(100000000, 999999999);
+        $eventId = self::resolveEventId($overrides, '');
+        if ($eventId === '' || !ctype_digit($eventId)) {
+            $eventId = (string) random_int(100000000, 999999999);
+        }
 
         $body = (string) json_encode([
-            'id' => $notificationId,
+            'id' => (int) $eventId,
             'type' => 'payment',
             'action' => 'payment.updated',
             'data' => ['id' => $token],
@@ -149,6 +173,42 @@ final class PaymentWebhookSimulator
 
         $queryString = http_build_query(['type' => 'payment', 'data.id' => $token]);
 
-        return [$body, $headers, $queryString];
+        return [$body, $headers, $queryString, $eventId];
+    }
+
+    /**
+     * @param array<string, mixed> $payment
+     * @param array{amount?:float|int|string, currency?:string, event_id?:string} $overrides
+     * @return array{0:float, 1:string}
+     */
+    private static function resolveSimulatedMoney(array $payment, array $overrides): array
+    {
+        $amount = array_key_exists('amount', $overrides) && $overrides['amount'] !== '' && $overrides['amount'] !== null
+            ? (float) $overrides['amount']
+            : (float) $payment['amount'];
+
+        $currency = array_key_exists('currency', $overrides) && trim((string) $overrides['currency']) !== ''
+            ? strtolower(trim((string) $overrides['currency']))
+            : strtolower((string) $payment['currency']);
+
+        return [$amount, $currency];
+    }
+
+    /**
+     * @param array{amount?:float|int|string, currency?:string, event_id?:string} $overrides
+     */
+    private static function resolveEventId(array $overrides, string $prefix): string
+    {
+        $custom = trim((string) ($overrides['event_id'] ?? ''));
+
+        if ($custom !== '') {
+            return $custom;
+        }
+
+        if ($prefix === '') {
+            return (string) random_int(100000000, 999999999);
+        }
+
+        return $prefix . bin2hex(random_bytes(8));
     }
 }

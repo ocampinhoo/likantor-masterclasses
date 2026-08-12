@@ -136,14 +136,72 @@ final class PaymentService
             return ['handled' => true, 'reason' => 'already_in_status', 'payment_id' => $paymentId, 'status' => $previousStatus];
         }
 
+        // Un pago reembolsado o con contracargo NUNCA vuelve a conceder acceso,
+        // aunque llegue un evento tardío de "approved".
+        if (
+            in_array($previousStatus, ['refunded', 'chargeback'], true)
+            && $canonicalStatus === 'approved'
+        ) {
+            ErrorHandler::log('Webhook approved ignored after refund/chargeback', [
+                'payment_id' => $paymentId,
+                'previous_status' => $previousStatus,
+            ]);
+
+            return [
+                'handled' => true,
+                'reason' => 'blocked_reactivation_after_' . $previousStatus,
+                'payment_id' => $paymentId,
+                'status' => $previousStatus,
+            ];
+        }
+
         $metadata = is_array($payment['metadata']) ? $payment['metadata'] : [];
         $metadata['last_webhook_context'] = $context;
+
+        // Antes de conceder acceso, el monto/moneda reportados por el proveedor
+        // deben coincidir con lo que este checkout solicitó server-side.
+        if ($canonicalStatus === 'approved' && $previousStatus !== 'approved') {
+            $amountCheck = $this->assertCheckoutAmountMatches($payment, $receivedAmount, $receivedCurrency);
+
+            if ($amountCheck !== null) {
+                $metadata['rejected_approval'] = [
+                    'reason' => $amountCheck,
+                    'received_amount' => $receivedAmount,
+                    'received_currency' => $receivedCurrency,
+                    'expected_amount' => (float) $payment['amount'],
+                    'expected_currency' => (string) $payment['currency'],
+                ];
+
+                $this->payments->updateFromWebhook($paymentId, [
+                    'status' => 'failed',
+                    'provider_payment_id' => $providerPaymentId,
+                    // Conservar el monto/moneda originales del checkout (no sobrescribir con el incorrecto).
+                    'amount' => null,
+                    'currency' => null,
+                    'failure_reason' => $amountCheck,
+                    'metadata' => $metadata,
+                ]);
+
+                ErrorHandler::log('Webhook approved rejected: amount/currency mismatch', [
+                    'payment_id' => $paymentId,
+                    'reason' => $amountCheck,
+                ]);
+
+                return [
+                    'handled' => true,
+                    'reason' => $amountCheck,
+                    'payment_id' => $paymentId,
+                    'status' => 'failed',
+                ];
+            }
+        }
 
         $this->payments->updateFromWebhook($paymentId, [
             'status' => $canonicalStatus,
             'provider_payment_id' => $providerPaymentId,
             'amount' => $receivedAmount,
             'currency' => $receivedCurrency,
+            'failure_reason' => null,
             'metadata' => $metadata,
         ]);
 
@@ -153,11 +211,61 @@ final class PaymentService
             $this->activateAccess($paymentId, (int) $payment['user_id'], (int) $payment['masterclass_id']);
         } elseif (in_array($canonicalStatus, ['refunded', 'chargeback'], true) && $payment['enrollment_id'] !== null) {
             $this->revokeAccess((int) $payment['enrollment_id'], $canonicalStatus);
+        } elseif (
+            in_array($canonicalStatus, ['refunded', 'chargeback'], true)
+            && $payment['enrollment_id'] === null
+            && $wasApproved
+        ) {
+            // Pago ya estaba approved pero enrollment_id aún no enlazado en esta fila
+            // (caso raro): buscar inscripción del usuario y revocarla.
+            $enrollment = $this->enrollments->findByUserAndMasterclass(
+                (int) $payment['user_id'],
+                (int) $payment['masterclass_id']
+            );
+
+            if ($enrollment !== null) {
+                $this->revokeAccess((int) $enrollment['id'], $canonicalStatus);
+            }
         }
         // failed/cancelled/pending/unknown antes de la aprobación no requieren
         // ninguna acción sobre enrollments: la inscripción aún no existe.
 
         return ['handled' => true, 'payment_id' => $paymentId, 'status' => $canonicalStatus];
+    }
+
+    /**
+     * Compara el monto/moneda del webhook con los del intento de checkout.
+     * Devuelve null si coinciden; o un código de error si no.
+     */
+    private function assertCheckoutAmountMatches(
+        array $payment,
+        ?float $receivedAmount,
+        ?string $receivedCurrency
+    ): ?string {
+        if ($receivedAmount === null) {
+            return 'amount_missing';
+        }
+
+        $receivedCurrency = strtoupper(trim((string) $receivedCurrency));
+
+        if ($receivedCurrency === '') {
+            return 'currency_missing';
+        }
+
+        $expectedCurrency = strtoupper(trim((string) $payment['currency']));
+
+        if ($receivedCurrency !== $expectedCurrency) {
+            return 'currency_mismatch';
+        }
+
+        $expectedCents = (int) round(((float) $payment['amount']) * 100);
+        $receivedCents = (int) round($receivedAmount * 100);
+
+        if ($expectedCents !== $receivedCents) {
+            return 'amount_mismatch';
+        }
+
+        return null;
     }
 
     private function activateAccess(int $paymentId, int $userId, int $masterclassId): void

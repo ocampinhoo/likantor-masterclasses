@@ -42,6 +42,7 @@ final class PaymentSimulatorController extends Controller
         $this->view('dev/fake-checkout', [
             'title' => 'Simulador de pago (solo desarrollo)',
             'payment' => $payment,
+            'lastEventId' => $_SESSION['_dev_last_webhook_event_id'][$uuid] ?? null,
         ]);
     }
 
@@ -58,16 +59,39 @@ final class PaymentSimulatorController extends Controller
         $outcome = (string) $this->input('outcome', 'approved');
         $provider = (string) $payment['provider'];
 
-        $event = PaymentWebhookSimulator::build($provider, $outcome, $payment);
-        $response = Http::request('POST', url($event['path']), $event['headers'], $event['body'], 15);
+        $overrides = [];
 
-        if ($response['status'] >= 200 && $response['status'] < 300) {
-            $this->flash('success', 'Webhook simulado enviado (resultado: ' . strtoupper($outcome) . '). El estado se actualizó con el mismo código que procesa webhooks reales.');
-        } else {
-            $this->flash('error', 'El webhook simulado respondió con error (HTTP ' . $response['status'] . '). Revisa storage/logs/app.log para más detalle.');
+        $overrideAmount = trim((string) $this->input('override_amount', ''));
+        $overrideCurrency = trim((string) $this->input('override_currency', ''));
+        $eventId = trim((string) $this->input('event_id', ''));
+
+        if ($overrideAmount !== '') {
+            $overrides['amount'] = $overrideAmount;
         }
 
-        $this->redirect('/pago/exito');
+        if ($overrideCurrency !== '') {
+            $overrides['currency'] = $overrideCurrency;
+        }
+
+        if ($eventId !== '') {
+            $overrides['event_id'] = $eventId;
+        }
+
+        $event = PaymentWebhookSimulator::build($provider, $outcome, $payment, $overrides);
+        $response = Http::request('POST', url($event['path']), $event['headers'], $event['body'], 15);
+
+        $_SESSION['_dev_last_webhook_event_id'][$uuid] = $event['event_id'];
+
+        if ($response['status'] >= 200 && $response['status'] < 300) {
+            $this->flash(
+                'success',
+                'Webhook simulado OK (outcome=' . strtoupper($outcome) . ', event_id=' . $event['event_id'] . ', HTTP ' . $response['status'] . ': ' . $response['body'] . ').'
+            );
+        } else {
+            $this->flash('error', 'El webhook simulado respondió con error (HTTP ' . $response['status'] . '). Revisa storage/logs/app.log.');
+        }
+
+        $this->redirect('/dev/pagos/' . $uuid);
     }
 
     private function guardLocalEnv(): void
