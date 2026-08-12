@@ -1,0 +1,180 @@
+/* ==========================================================================
+   LIKANTOR — Base styles
+   ========================================================================== */
+
+:root {
+    --lk-navy-950: #0a0f18;
+    --lk-navy-900: #0f1724;
+    --lk-navy-800: #1a2332;
+    --lk-navy-700: #243044;
+    --lk-slate-500: #64748b;
+    --lk-slate-400: #94a3b8;
+    --lk-slate-200: #e2e8f0;
+    --lk-slate-100: #f1f5f9;
+    --lk-white: #ffffff;
+    --lk-gold: #c9a227;
+    --lk-gold-light: #dbb94a;
+    --lk-gold-dark: #a8861f;
+    --lk-success: #166534;
+    --lk-error: #b91c1c;
+
+    --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+    --font-display: Georgia, "Times New Roman", serif;
+
+    --container: 1140px;
+    --container-narrow: 760px;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 2px rgb(15 23 36 / 0.06);
+    --shadow: 0 8px 30px rgb(15 23 36 / 0.08);
+    --shadow-lg: 0 20px 50px rgb(15 23 36 / 0.12);
+    --transition: 0.2s ease;
+    --header-h: 72px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--lk-navy-900);
+    background: var(--lk-white);
+    -webkit-font-smoothing: antialiased;
+}
+
+img, svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    color: var(--lk-gold-dark);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+a:hover { color: var(--lk-gold); }
+
+:focus-visible {
+    outline: 3px solid var(--lk-gold);
+    outline-offset: 2px;
+}
+
+.container {
+    width: min(100% - 2rem, var(--container));
+    margin-inline: auto;
+}
+
+.container--narrow {
+    width: min(100% - 2rem, var(--container-narrow));
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.skip-link:focus {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 9999;
+    width: auto;
+    height: auto;
+    padding: 0.75rem 1.25rem;
+    background: var(--lk-gold);
+    color: var(--lk-navy-950);
+    font-weight: 700;
+    clip: auto;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+}
+
+.text-muted { color: var(--lk-slate-500); }
+.text-center { text-align: center; }
+.placeholder {
+    font-style: italic;
+    color: var(--lk-slate-500);
+    border-left: 3px solid var(--lk-gold);
+    padding: 0.75rem 0 0.75rem 1rem;
+    background: var(--lk-slate-100);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.section {
+    padding: clamp(3rem, 6vw, 5rem) 0;
+}
+
+.section--dark {
+    background: var(--lk-navy-900);
+    color: var(--lk-white);
+}
+
+.section--muted {
+    background: var(--lk-slate-100);
+}
+
+.section__eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--lk-gold);
+    margin-bottom: 0.75rem;
+}
+
+.section--dark .section__eyebrow { color: var(--lk-gold-light); }
+
+.section__title {
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    line-height: 1.15;
+    margin: 0 0 1rem;
+    font-weight: 700;
+}
+
+.section__lead {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--lk-slate-500);
+    max-width: 62ch;
+    margin: 0 0 2rem;
+}
+
+.section--dark .section__lead { color: var(--lk-slate-400); }
+
+.grid-2 {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+}
+
+.grid-3 {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1024px) {
+    .grid-2--aside { grid-template-columns: 1fr 1.1fr; align-items: center; }
+}

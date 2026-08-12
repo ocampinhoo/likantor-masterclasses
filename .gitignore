@@ -1,0 +1,58 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Composer
+/vendor/
+
+# Logs & storage
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/private/*
+!/storage/private/.gitkeep
+
+# Database backups
+*.sql.gz
+/backups/
+/database/backups/
+
+# PHP
+*.log
+.phpunit.result.cache
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Windows
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Cursor
+.cursor/
+
+# Temporary files
+/tmp/
+*.tmp
+*.temp
+*.bak
+
+# Uploads (if sensitive)
+/public/uploads/*
+!/public/uploads/.gitkeep

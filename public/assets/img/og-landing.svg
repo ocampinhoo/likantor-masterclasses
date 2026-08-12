@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f1724"/>
+  <text x="80" y="200" fill="#c9a227" font-family="system-ui,sans-serif" font-size="28" font-weight="600">MASTERCLASS EN VIVO</text>
+  <text x="80" y="290" fill="#ffffff" font-family="system-ui,sans-serif" font-size="52" font-weight="700">Revisión de Estructuras</text>
+  <text x="80" y="360" fill="#ffffff" font-family="system-ui,sans-serif" font-size="52" font-weight="700">Post-Sismo</text>
+  <text x="80" y="430" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="28">17 sep 2026 · 6:30 PM CDMX · Likantor</text>
+  <path d="M920 450 L1020 180 L1120 450 Z" stroke="#c9a227" stroke-width="4" fill="none"/>
+</svg>

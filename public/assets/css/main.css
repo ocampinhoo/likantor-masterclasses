@@ -1,0 +1,5 @@
+/**
+ * Legacy import — use base.css + components.css + pages/*.css
+ */
+@import url('base.css');
+@import url('components.css');

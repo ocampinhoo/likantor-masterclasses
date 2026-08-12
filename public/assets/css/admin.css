@@ -1,0 +1,156 @@
+/* Likantor Masterclasses — Admin styles */
+
+.admin-body {
+    margin: 0;
+    background: #f0f2f5;
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 240px;
+    background: #1a365d;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.admin-sidebar__brand {
+    padding: 1.25rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.admin-sidebar__brand a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    flex: 1;
+}
+
+.admin-nav a {
+    color: rgb(255 255 255 / 0.85);
+    text-decoration: none;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+}
+
+.admin-nav a:hover,
+.admin-nav a.is-active {
+    background: rgb(255 255 255 / 0.1);
+    color: #fff;
+}
+
+.admin-sidebar__footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.admin-sidebar__footer a {
+    color: rgb(255 255 255 / 0.7);
+    font-size: 0.875rem;
+}
+
+.admin-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-header {
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-header__title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.admin-header__user {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.admin-main {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+.stat-card__value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a365d;
+}
+
+.stat-card__label {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.admin-note {
+    margin-top: 1rem;
+}
+
+.settings-panel {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.settings-panel code {
+    background: #edf2f7;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+    }
+
+    .admin-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 0.5rem;
+    }
+
+    .admin-nav a {
+        padding: 0.5rem 0.75rem;
+    }
+}
