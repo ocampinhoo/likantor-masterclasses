@@ -14,7 +14,8 @@ final class HomeController extends Controller
         $masterclasses = [];
 
         try {
-            $masterclasses = (new MasterclassRepository())->published();
+            $repo = new MasterclassRepository();
+            $masterclasses = $repo->mapWithoutSensitiveAccessFields($repo->published());
         } catch (\Throwable) {
             // BD no disponible aún — mostrar home sin masterclasses
         }

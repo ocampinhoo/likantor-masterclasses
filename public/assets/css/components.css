@@ -559,3 +559,70 @@
     color: var(--lk-navy-900);
     margin: 0.5rem 0;
 }
+
+/* Área privada — acceso Masterclass */
+.account-masterclasses {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.account-mc {
+    background: var(--lk-white, #fff);
+    border: 1px solid var(--lk-slate-200);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+}
+
+.account-mc__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.account-mc__title {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--lk-navy-900);
+}
+
+.account-mc__headline {
+    margin: 0 0 0.75rem;
+    color: var(--lk-slate-700, #334155);
+}
+
+.account-mc__meta {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    color: var(--lk-slate-600, #475569);
+    font-size: 0.95rem;
+}
+
+.account-mc__meta li {
+    margin: 0.25rem 0;
+}
+
+.account-mc__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.form-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--lk-slate-500, #64748b);
+}
+
+.form-actions {
+    margin-top: 1.25rem;
+}
+
+.req {
+    color: #b91c1c;
+}

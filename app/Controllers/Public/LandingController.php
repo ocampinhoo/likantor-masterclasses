@@ -81,7 +81,7 @@ final class LandingController extends Controller
             $fromDb = (new MasterclassRepository())->findBySlug(self::SLUG);
 
             if ($fromDb !== null && in_array($fromDb['status'], ['published', 'registration_closed', 'live', 'completed'], true)) {
-                return $fromDb;
+                return (new MasterclassRepository())->withoutSensitiveAccessFields($fromDb);
             }
         } catch (\Throwable) {
             // Fallback a config estática

@@ -18,6 +18,7 @@ use App\Controllers\Public\LandingController;
 use App\Controllers\Public\LeadController;
 use App\Controllers\Public\MasterclassController;
 use App\Controllers\Public\PageController;
+use App\Controllers\User\AccessController;
 use App\Controllers\User\CheckoutController;
 use App\Controllers\User\DashboardController as UserDashboardController;
 use App\Controllers\User\ProfileController;
@@ -64,6 +65,7 @@ $router->post('/restablecer-contrasena/{token}', [AuthController::class, 'resetP
 $router->get('/mi-cuenta', [UserDashboardController::class, 'index'], [AuthMiddleware::class]);
 $router->get('/mi-cuenta/perfil', [ProfileController::class, 'show'], [AuthMiddleware::class]);
 $router->post('/mi-cuenta/perfil', [ProfileController::class, 'update'], [AuthMiddleware::class, CsrfMiddleware::class]);
+$router->get('/mi-cuenta/masterclasses/{slug}/acceso-zoom', [AccessController::class, 'zoom'], [AuthMiddleware::class]);
 
 // --- Checkout / pagos ---
 $router->get('/checkout/{slug}', [CheckoutController::class, 'show'], [AuthMiddleware::class]);
@@ -86,6 +88,8 @@ $router->get('/admin', [AdminDashboardController::class, 'index'], [AdminMiddlew
 $router->get('/admin/usuarios', [AdminUsersController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/leads', [AdminLeadsController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/masterclasses', [AdminMasterclassesController::class, 'index'], [AdminMiddleware::class]);
+$router->get('/admin/masterclasses/{id}/zoom', [AdminMasterclassesController::class, 'editZoom'], [AdminMiddleware::class]);
+$router->post('/admin/masterclasses/{id}/zoom', [AdminMasterclassesController::class, 'updateZoom'], [AdminMiddleware::class, CsrfMiddleware::class]);
 $router->get('/admin/registros', [AdminEnrollmentsController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/pagos', [AdminPaymentsController::class, 'index'], [AdminMiddleware::class]);
 $router->get('/admin/emails', [AdminEmailsController::class, 'index'], [AdminMiddleware::class]);

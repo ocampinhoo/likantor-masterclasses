@@ -19,7 +19,9 @@ final class MasterclassController extends Controller
 
     public function index(): void
     {
-        $items = $this->masterclasses->published();
+        $items = $this->masterclasses->mapWithoutSensitiveAccessFields(
+            $this->masterclasses->published()
+        );
 
         $this->view('public/masterclasses/index', [
             'title' => 'Masterclasses',
@@ -41,7 +43,7 @@ final class MasterclassController extends Controller
 
         $this->view('public/masterclasses/show', [
             'title' => $masterclass['name'],
-            'masterclass' => $masterclass,
+            'masterclass' => $this->masterclasses->withoutSensitiveAccessFields($masterclass),
             'utm' => Utm::fromSession(),
         ]);
     }

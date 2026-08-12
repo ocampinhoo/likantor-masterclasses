@@ -95,6 +95,33 @@ final class PaymentRepository
         return $this->decorate($stmt->fetch());
     }
 
+    /**
+     * Pagos aún no confirmados del usuario (pendientes de webhook).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function findPendingByUserId(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT p.*,
+                    m.name AS masterclass_name,
+                    m.slug AS masterclass_slug,
+                    m.event_starts_at,
+                    m.timezone,
+                    m.duration_minutes
+             FROM payments p
+             INNER JOIN masterclasses m ON m.id = p.masterclass_id
+             WHERE p.user_id = :user_id AND p.status = \'pending\'
+             ORDER BY p.created_at DESC'
+        );
+        $stmt->execute(['user_id' => $userId]);
+
+        return array_map(
+            fn (array $row): array => $this->decorate($row) ?? $row,
+            $stmt->fetchAll()
+        );
+    }
+
     public function setProviderPreferenceId(int $id, string $providerPreferenceId): void
     {
         $stmt = $this->db->prepare('UPDATE payments SET provider_preference_id = :value, updated_at = NOW() WHERE id = :id');

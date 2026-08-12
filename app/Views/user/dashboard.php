@@ -20,34 +20,61 @@
         </div>
 
         <h2>Mis Masterclasses</h2>
-        <?php if (empty($enrollments)): ?>
-            <p class="text-muted">Aún no tienes inscripciones. <a href="<?= url('/masterclasses') ?>">Explora las Masterclasses disponibles</a>.</p>
+
+        <?php if (empty($cards)): ?>
+            <p class="text-muted">Aún no hay Masterclasses disponibles. <a href="<?= url('/masterclasses') ?>">Explora el catálogo</a>.</p>
         <?php else: ?>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Masterclass</th>
-                            <th>Estado</th>
-                            <th>Acceso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($enrollments as $enrollment): ?>
-                            <tr>
-                                <td><?= e($enrollment['masterclass_name']) ?></td>
-                                <td><span class="badge badge--<?= e($enrollment['status']) ?>"><?= e($enrollment['status']) ?></span></td>
-                                <td>
-                                    <?php if ($enrollment['status'] === 'paid'): ?>
-                                        <span class="text-success">Acceso activo</span>
-                                    <?php else: ?>
-                                        <span class="text-muted">Sin acceso</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+            <div class="account-masterclasses">
+                <?php foreach ($cards as $card): ?>
+                    <?php
+                    $state = (string) ($card['access_state'] ?? 'none');
+                    ?>
+                    <article class="account-mc">
+                        <header class="account-mc__header">
+                            <h3 class="account-mc__title"><?= e($card['name'] ?? '') ?></h3>
+                            <span class="badge badge--<?= e($state === 'paid' ? 'paid' : ($state === 'pending' ? 'pending' : 'unknown')) ?>">
+                                <?= e($card['status_label'] ?? '') ?>
+                            </span>
+                        </header>
+
+                        <p class="account-mc__headline"><?= e($card['headline'] ?? '') ?></p>
+
+                        <?php if (!empty($card['event_date']) || !empty($card['event_time']) || !empty($card['duration_minutes'])): ?>
+                            <ul class="account-mc__meta">
+                                <?php if (!empty($card['event_date'])): ?>
+                                    <li><strong>Fecha:</strong> <?= e($card['event_date']) ?></li>
+                                <?php endif; ?>
+                                <?php if (!empty($card['event_time'])): ?>
+                                    <li><strong>Hora:</strong> <?= e($card['event_time']) ?></li>
+                                <?php endif; ?>
+                                <?php if (!empty($card['duration_minutes'])): ?>
+                                    <li><strong>Duración:</strong> <?= (int) $card['duration_minutes'] ?> min</li>
+                                <?php endif; ?>
+                            </ul>
+                        <?php endif; ?>
+
+                        <div class="account-mc__actions">
+                            <?php if ($state === 'paid'): ?>
+                                <?php if (!empty($card['zoom_ready'])): ?>
+                                    <a
+                                        class="btn btn--primary"
+                                        href="<?= url('/mi-cuenta/masterclasses/' . rawurlencode((string) $card['slug']) . '/acceso-zoom') ?>"
+                                    >
+                                        Entrar a la Masterclass por Zoom
+                                    </a>
+                                <?php else: ?>
+                                    <p class="text-muted">Tu acceso está confirmado. El enlace de Zoom se publicará aquí antes del evento.</p>
+                                <?php endif; ?>
+                            <?php elseif ($state === 'pending'): ?>
+                                <p class="text-muted">Te avisaremos cuando el pago se confirme. No es necesario volver a pagar.</p>
+                            <?php elseif ($state === 'none'): ?>
+                                <a class="btn btn--primary" href="<?= url('/checkout/' . rawurlencode((string) $card['slug'])) ?>">
+                                    Reserva tu lugar
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>

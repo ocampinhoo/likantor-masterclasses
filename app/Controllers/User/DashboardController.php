@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers\User;
 
 use App\Core\Controller;
-use App\Repositories\EnrollmentRepository;
 use App\Services\AuthService;
+use App\Services\MasterclassAccessService;
 
 final class DashboardController extends Controller
 {
@@ -14,10 +14,10 @@ final class DashboardController extends Controller
     {
         $auth = new AuthService();
         $user = $auth->user();
-        $enrollments = [];
+        $cards = [];
 
         try {
-            $enrollments = (new EnrollmentRepository())->findByUserId((int) $user['id']);
+            $cards = (new MasterclassAccessService())->dashboardCardsForUser((int) $user['id']);
         } catch (\Throwable) {
             // BD no disponible
         }
@@ -25,7 +25,7 @@ final class DashboardController extends Controller
         $this->view('user/dashboard', [
             'title' => 'Mi cuenta',
             'user' => $user,
-            'enrollments' => $enrollments,
+            'cards' => $cards,
         ]);
     }
 }

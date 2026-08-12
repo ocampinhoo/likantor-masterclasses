@@ -22,7 +22,17 @@ final class EnrollmentRepository
     public function findByUserId(int $userId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT e.*, m.name AS masterclass_name, m.slug AS masterclass_slug, m.event_starts_at, m.timezone, m.status AS masterclass_status
+            'SELECT e.*,
+                    m.name AS masterclass_name,
+                    m.slug AS masterclass_slug,
+                    m.event_starts_at,
+                    m.timezone,
+                    m.duration_minutes,
+                    m.status AS masterclass_status,
+                    CASE
+                        WHEN m.zoom_meeting_url IS NOT NULL AND TRIM(m.zoom_meeting_url) <> \'\' THEN 1
+                        ELSE 0
+                    END AS has_zoom_url
              FROM enrollments e
              INNER JOIN masterclasses m ON m.id = e.masterclass_id
              WHERE e.user_id = :user_id
@@ -132,5 +142,19 @@ final class EnrollmentRepository
     {
         $stmt = $this->db->prepare('UPDATE enrollments SET status = :status, updated_at = NOW() WHERE id = :id');
         $stmt->execute(['status' => $status, 'id' => $id]);
+    }
+
+    /**
+     * Marca la primera revelación del enlace Zoom. Idempotente: no sobrescribe
+     * un zoom_revealed_at ya existente.
+     */
+    public function markZoomRevealed(int $enrollmentId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE enrollments
+             SET zoom_revealed_at = COALESCE(zoom_revealed_at, NOW()), updated_at = NOW()
+             WHERE id = :id'
+        );
+        $stmt->execute(['id' => $enrollmentId]);
     }
 }
