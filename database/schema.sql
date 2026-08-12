@@ -4,11 +4,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE DATABASE IF NOT EXISTS likantor_masterclasses
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE likantor_masterclasses;
+USE u232522853_likantormc;
 
 -- ---------------------------------------------------------------------------
 -- users
